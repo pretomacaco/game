@@ -40,5 +40,7 @@ Passo 6: Iniciar o Jogo
 Agora, você pode iniciar o jogo com o Love2D. Execute o seguinte comando dentro da pasta do repositório:
 
 love .
-ˋˋˋ
-Isso abrirá o jogo usando o Love2
+```
+Isso abrirá o jogo usando o Love2D
+
+ATENCAO, VOCE PRESISA DE UMA INTERFACE GRAFICA PARA JOGAR
