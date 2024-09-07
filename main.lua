@@ -23,6 +23,8 @@ function love.load()
         print("Error: Game Over image '9999damage.png' not found! Using default image.")
     end
 
+    youCheatedImage = love.graphics.newImage("images/youcheated.png")
+
     playerWidth, playerHeight = 50, 50
     obstacleWidth, obstacleHeight = 50, 50
     gunWidth, gunHeight = 30, 30
@@ -56,10 +58,11 @@ function resetGame()
     gunTimer = 0
     score = 0
     lastObstacleIncrement = 0
+    youCheated = false
 end
 
 function love.update(dt)
-    if gameOver then
+    if gameOver or youCheated then
         if shakeTime > 0 then
             shakeTime = shakeTime - dt
             shakeTimer = shakeTimer + dt
@@ -73,7 +76,6 @@ function love.update(dt)
                 love.event.quit()
             end
         end
-
         return
     end
 
@@ -160,6 +162,13 @@ function love.update(dt)
     end
 end
 
+function love.keypressed(key)
+    if key == "7" then
+        youCheated = true
+        print("Você trapaceou!")
+    end
+end
+
 function love.draw()
     if gameOver then
         if gameOverImage then
@@ -168,6 +177,11 @@ function love.draw()
             love.graphics.setColor(1, 0, 0)
             love.graphics.printf("Game Over", 0, love.graphics.getHeight() / 2 - 20, love.graphics.getWidth(), "center")
         end
+        return
+    end
+
+    if youCheated then
+        love.graphics.draw(youCheatedImage, 0, 0, 0, love.graphics.getWidth() / youCheatedImage:getWidth(), love.graphics.getHeight() / youCheatedImage:getHeight())
         return
     end
 
