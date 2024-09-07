@@ -1,9 +1,13 @@
 function love.load()
-    love.window.setTitle("Mini Jogo - Evitar Obstáculos")
+    love.window.setTitle("boyllet friell")
     originalWidth, originalHeight = 800, 600
-    love.window.setMode(originalWidth, originalHeight, {resizable=true})
+    love.window.setMode(originalWidth, originalHeight, {
+        resizable = true,
+        borderless = true
+    })
     love.graphics.setBackgroundColor(0.1, 0.1, 0.1)
 
+    bgImage = love.graphics.newImage("images/bg.png")
     playerImage = love.graphics.newImage("images/player.png")
     obstacleImage = love.graphics.newImage("images/obstacle.png")
 
@@ -29,6 +33,35 @@ function love.load()
     obstacleWidth, obstacleHeight = 50, 50
     gunWidth, gunHeight = 30, 30
 
+    staticShader = love.graphics.newShader([[
+        extern float time;
+        extern float noiseIntensity;
+
+        vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords) {
+            float noise = (sin(texture_coords.x * 100.0 + time * 10.0) + cos(texture_coords.y * 100.0 + time * 10.0)) * noiseIntensity;
+            vec4 pixel = Texel(texture, texture_coords + vec2(noise, noise) * 0.01) * color;
+            return pixel;
+        }
+    ]])
+
+    rainbowShader = love.graphics.newShader([[
+        extern float time;
+        extern float frequency;
+        extern float amplitude;
+        extern float speed;
+
+        vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords) {
+            float wave = sin(texture_coords.y * frequency + time * speed) * amplitude;
+            vec2 distortedCoords = vec2(texture_coords.x + wave, texture_coords.y);
+            vec4 pixel = Texel(texture, distortedCoords) * color;
+            float r = pixel.r + 0.5 * sin(time * 3.0);
+            float g = pixel.g + 0.5 * sin(time * 2.0);
+            float b = pixel.b + 0.5 * sin(time * 4.0);
+            return vec4(r, g, b, pixel.a);
+        }
+    ]])
+
+    math.randomseed(os.time())
     resetGame()
 end
 
@@ -50,8 +83,8 @@ function resetGame()
     obstacleCountIncrement = 0.05
     gameOver = false
     shakeTime = 0
-    shakeDuration = 10
-    shakeAmount = 130
+    shakeDuration = 5
+    shakeAmount = 5
     shakeFrequency = 0.05
     shakeTimer = 0
     gunAcquired = false
@@ -59,6 +92,9 @@ function resetGame()
     score = 0
     lastObstacleIncrement = 0
     youCheated = false
+    showGunMessage = false
+    gunMessageTimer = 0
+    gunMessageDuration = 5
 end
 
 function love.update(dt)
@@ -76,6 +112,17 @@ function love.update(dt)
                 love.event.quit()
             end
         end
+
+        if youCheated then
+            rainbowShader:send("time", love.timer.getTime())
+            rainbowShader:send("frequency", 10)
+            rainbowShader:send("amplitude", 0.03)
+            rainbowShader:send("speed", 3)
+        elseif gameOver then
+            staticShader:send("time", love.timer.getTime())
+            staticShader:send("noiseIntensity", 0.1)
+        end
+
         return
     end
 
@@ -84,6 +131,15 @@ function love.update(dt)
         if gunTimer >= 10 then
             player.hasGun = true
             gunAcquired = true
+            showGunMessage = true
+            gunMessageTimer = gunMessageDuration
+        end
+    end
+
+    if showGunMessage then
+        gunMessageTimer = gunMessageTimer - dt
+        if gunMessageTimer <= 0 then
+            showGunMessage = false
         end
     end
 
@@ -132,7 +188,7 @@ function love.update(dt)
     end
 
     bulletTimer = bulletTimer + dt
-    if love.keyboard.isDown("space") and player.hasGun and bulletTimer >= 0.2 then
+    if love.keyboard.isDown("space") and player.hasGun and bulletTimer >= 2 then
         bulletTimer = 0
         local bullet = {
             x = player.x + player.width / 2 - 5,
@@ -170,18 +226,32 @@ function love.keypressed(key)
 end
 
 function love.draw()
+    love.graphics.setColor(0.3, 0.3, 0.3)
+    love.graphics.draw(bgImage, 0, 0, 0, love.graphics.getWidth() / bgImage:getWidth(), love.graphics.getHeight() / bgImage:getHeight())
+    love.graphics.setColor(1, 1, 1)
+
     if gameOver then
+        love.graphics.setShader(staticShader)
+        staticShader:send("time", love.timer.getTime())
+        staticShader:send("noiseIntensity", 0.1)
         if gameOverImage then
             love.graphics.draw(gameOverImage, 0, 0, 0, love.graphics.getWidth() / gameOverImage:getWidth(), love.graphics.getHeight() / gameOverImage:getHeight())
         else
             love.graphics.setColor(1, 0, 0)
             love.graphics.printf("Game Over", 0, love.graphics.getHeight() / 2 - 20, love.graphics.getWidth(), "center")
         end
+        love.graphics.setShader()
         return
     end
 
     if youCheated then
+        love.graphics.setShader(rainbowShader)
+        rainbowShader:send("time", love.timer.getTime())
+        rainbowShader:send("frequency", 10)
+        rainbowShader:send("amplitude", 0.03)
+        rainbowShader:send("speed", 3)
         love.graphics.draw(youCheatedImage, 0, 0, 0, love.graphics.getWidth() / youCheatedImage:getWidth(), love.graphics.getHeight() / youCheatedImage:getHeight())
+        love.graphics.setShader()
         return
     end
 
@@ -200,8 +270,12 @@ function love.draw()
     end
     love.graphics.setColor(1, 1, 1)
 
-    love.graphics.setColor(1, 1, 1)
     love.graphics.print("Pontos: " .. score, 10, 10)
+
+    if showGunMessage then
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.printf("PRESS SPACE TO SHOOT", 0, love.graphics.getHeight() / 2 - 40, love.graphics.getWidth(), "center")
+    end
 end
 
 function checkCollision(a, b)
