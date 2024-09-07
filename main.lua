@@ -3,7 +3,7 @@ function love.load()
     originalWidth, originalHeight = 800, 600
     love.window.setMode(originalWidth, originalHeight, {
         resizable = true,
-        borderless = true
+        borderless = false
     })
     love.graphics.setBackgroundColor(0.1, 0.1, 0.1)
 
