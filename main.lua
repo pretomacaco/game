@@ -1,3 +1,6 @@
+music = love.audio.newSource("orgia.mp3", "stream")
+music:play()
+
 function love.load()
     love.window.setTitle("boyllet friell")
     originalWidth, originalHeight = 800, 600
@@ -7,9 +10,9 @@ function love.load()
     })
     love.graphics.setBackgroundColor(0.1, 0.1, 0.1)
 
-    bgImage = love.graphics.newImage("images/bg.png")
+    bgImage = love.graphics.newImage("images/bg.jpg")
     playerImage = love.graphics.newImage("images/player.png")
-    obstacleImage = love.graphics.newImage("images/obstacle.png")
+    obstacleImage = love.graphics.newImage("images/obstacle.jpg")
 
     local success, gunImageLoaded = pcall(love.graphics.newImage, "images/gun.png")
     if success then
